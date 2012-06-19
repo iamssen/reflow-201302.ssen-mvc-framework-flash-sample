@@ -17,6 +17,7 @@ package ssen.mvc.samples.flash {
 		}
 
 		private function addedToStageHandler(event:Event):void {
+			trace("ssen.mvc.samples.flash.FlashSample.addedToStageHandler(", event, ")");
 			removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
 			
 			initialContext();

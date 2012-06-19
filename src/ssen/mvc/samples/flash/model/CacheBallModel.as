@@ -1,113 +1,118 @@
 package ssen.mvc.samples.flash.model {
-	import flash.net.SharedObject;
-	import flash.utils.setTimeout;
-	
-	import ssen.mvc.base.Actor;
+import flash.net.SharedObject;
 
-	public class CacheBallModel extends Actor implements BallModel {
-		private const DELAY:int=100;
-		private var table:BallTable;
+import ssen.mvc.base.Actor;
 
-		public function CacheBallModel() {
-			table=new BallTable;
+public class CacheBallModel extends Actor implements BallModel {
+	private const DELAY:int=0;
+	private var table:BallTable;
 
-//			var so:SharedObject=SharedObject.getLocal("ballData");
-//			if (so.data["backup"]) {
-//				table.restoreBackup(so.data["backup"]);
-//			}
-		}
+	public function CacheBallModel() {
+		table=new BallTable;
 
-		override protected function destruct():void {
-			super.destruct();
-
-//			var so:SharedObject=SharedObject.getLocal("ballData");
-//			so.data["backup"]=table.getBackup();
-
-			table=null;
-		}
-
-		public function addBall(x:Number, y:Number, result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				var ball:Ball=table.addBall(x, y);
-
-				if (result !== null) {
-					result(ball);
-				}
-			}, DELAY);
-		}
-
-		public function removeBall(id:int, result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				if (table.removeBall(id)) {
-					if (result !== null) {
-						result(id);
-					}
-				} else {
-					if (fault !== null) {
-						fault(new Error("remove failed"));
-					}
-				}
-			}, DELAY);
-		}
-
-		public function upBall(id:int, result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				var ball:Ball=table.getBall(id);
-				ball.r=ball.r + 1;
-				updateBall(ball, result, fault);
-			}, DELAY);
-		}
-
-		public function downBall(id:int, result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				var ball:Ball=table.getBall(id);
-				ball.r=ball.r - 1;
-				updateBall(ball, result, fault);
-			}, DELAY);
-		}
-
-		private function updateBall(ball:Ball, result:Function=null, fault:Function=null):void {
-			if (table.updateBall(ball.id, ball.x, ball.y, ball.r)) {
-				if (result !== null) {
-					result(ball);
-				}
-			} else {
-				if (fault !== null) {
-					fault(new Error("update failed"));
-				}
-			}
-		}
-
-		public function getBallList(result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				var list:Vector.<Ball>=table.getBallList();
-
-				if (list) {
-					if (result !== null) {
-						result(list);
-					}
-				} else {
-					if (fault !== null) {
-						fault(new Error("undefined ball list"));
-					}
-				}
-			}, DELAY);
-		}
-
-		public function clearBallList(result:Function=null, fault:Function=null):void {
-			setTimeout(function():void {
-				if (table.removeAllBall()) {
-					if (result !== null) {
-						result();
-					}
-				} else {
-					if (fault !== null) {
-						fault(new Error("clear failed"));
-					}
-				}
-			}, DELAY);
+		var so:SharedObject=SharedObject.getLocal("ballData");
+		if (so.data["backup"]) {
+			table.restoreBackup(so.data["backup"]);
 		}
 	}
+
+	override protected function destruct():void {
+		super.destruct();
+
+		table=null;
+	}
+
+	private function saveBackup():void {
+		var so:SharedObject=SharedObject.getLocal("ballData");
+		so.data["backup"]=table.getBackup();
+	}
+
+	public function addBall(x:Number, y:Number, result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		var ball:Ball=table.addBall(x, y);
+
+		if (result !== null) {
+			result(ball);
+			saveBackup();
+		}
+		// }, DELAY);
+	}
+
+	public function removeBall(id:int, result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		if (table.removeBall(id)) {
+			if (result !== null) {
+				result(id);
+				saveBackup();
+			}
+		} else {
+			if (fault !== null) {
+				fault(new Error("remove failed"));
+			}
+		}
+		// }, DELAY);
+	}
+
+	public function upBall(id:int, result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		var ball:Ball=table.getBall(id);
+		ball.r=ball.r + 1;
+		updateBall(ball, result, fault);
+		// }, DELAY);
+	}
+
+	public function downBall(id:int, result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		var ball:Ball=table.getBall(id);
+		ball.r=ball.r - 1;
+		updateBall(ball, result, fault);
+		// }, DELAY);
+	}
+
+	private function updateBall(ball:Ball, result:Function=null, fault:Function=null):void {
+		if (table.updateBall(ball.id, ball.x, ball.y, ball.r)) {
+			if (result !== null) {
+				result(ball);
+				saveBackup();
+			}
+		} else {
+			if (fault !== null) {
+				fault(new Error("update failed"));
+			}
+		}
+	}
+
+	public function getBallList(result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		var list:Vector.<Ball>=table.getBallList();
+
+		if (list) {
+			if (result !== null) {
+				result(list);
+			}
+		} else {
+			if (fault !== null) {
+				fault(new Error("undefined ball list"));
+			}
+		}
+		// }, DELAY);
+	}
+
+	public function clearBallList(result:Function=null, fault:Function=null):void {
+		// setTimeout(function():void {
+		if (table.removeAllBall()) {
+			if (result !== null) {
+				result();
+				saveBackup();
+			}
+		} else {
+			if (fault !== null) {
+				fault(new Error("clear failed"));
+			}
+		}
+		// }, DELAY);
+	}
+}
 }
 import ssen.common.DataTable;
 import ssen.mvc.samples.flash.model.Ball;
@@ -135,7 +140,7 @@ class BallTable extends DataTable {
 		return _delete(id) !== null;
 	}
 
-	public function updateBall(id:int, x:int, y:int, r:int):Boolean {
+	public function updateBall(id:int, x:Number, y:Number, r:int):Boolean {
 		return _update(id, {x: x, y: y, r: r}) !== null;
 	}
 
@@ -143,6 +148,7 @@ class BallTable extends DataTable {
 		var obj:Object=_read(id);
 
 		var ball:Ball=new Ball;
+		ball.id=id;
 		ball.x=obj["x"];
 		ball.y=obj["y"];
 		ball.r=obj["r"];
@@ -161,6 +167,7 @@ class BallTable extends DataTable {
 
 			if (obj) {
 				ball=new Ball;
+				ball.id=f;
 				ball.x=obj["x"];
 				ball.y=obj["y"];
 				ball.r=obj["r"];
