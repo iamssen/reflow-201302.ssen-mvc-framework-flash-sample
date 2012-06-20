@@ -7,6 +7,7 @@ package ssen.mvc.samples.flash.events {
 		public static const UP_BALL:String="upBall";
 		public static const DOWN_BALL:String="downBall";
 		public static const RENDER_BALL_LIST:String="renderBallList";
+		public static const CLEAR_ALL:String="clearAll";
 
 		public var ballId:int;
 		public var xpos:Number;

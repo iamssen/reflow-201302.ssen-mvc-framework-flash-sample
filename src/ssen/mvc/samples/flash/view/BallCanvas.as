@@ -1,207 +1,237 @@
 package ssen.mvc.samples.flash.view {
-import de.polygonal.ds.pooling.ObjectPool;
+	import de.polygonal.ds.pooling.ObjectPool;
+	
+	import flash.display.Sprite;
+	import flash.events.Event;
+	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
+	import flash.ui.Keyboard;
+	
+	import ssen.mvc.samples.flash.model.Ball;
 
-import flash.display.Sprite;
-import flash.events.Event;
-import flash.events.MouseEvent;
-import flash.utils.getTimer;
+	public class BallCanvas extends Sprite {
+		private var _height:int=10;
+		private var _width:int=10;
+		private var list:Vector.<Ball>;
+		private var invalidated:Boolean;
+		private var drawNow:Boolean;
+		private var store:Vector.<BallSprite>;
+		private var pool:ObjectPool;
 
-import ssen.mvc.samples.flash.model.Ball;
+		public function BallCanvas() {
+			addEventListener(Event.ADDED_TO_STAGE, addedToStageHandler, false, 0, true);
+			drawNow=true;
+			invalidate();
+		}
 
-public class BallCanvas extends Sprite {
-	private var _height:int=10;
-	private var _width:int=10;
-	private var list:Vector.<Ball>;
-	private var invalidated:Boolean;
-	private var drawNow:Boolean;
-	private var store:Vector.<BallSprite>;
-	private var pool:ObjectPool;
-
-	public function BallCanvas() {
-		addEventListener(Event.ADDED_TO_STAGE, addedToStageHandler, false, 0, true);
-		drawNow=true;
-		invalidate();
-	}
-
-	//=========================================================
-	// invalidation
-	//=========================================================
-	private function addedToStageHandler(event:Event):void {
-		//---------------------------------------
-		// startup
-		//---------------------------------------
-		removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
-		addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler, false, 0, true);
-		//		addEventListener(MouseEvent.CLICK, doubleClickHandler, false, 0, true);
-
-		pool=new ObjectPool(1000);
-		pool.allocate(BallSprite);
-
-		doubleClickEnabled=true;
-
-		//---------------------------------------
+		//=========================================================
 		// invalidation
-		//---------------------------------------
-		if (invalidated) {
-			invalidated=false;
+		//=========================================================
+		private function addedToStageHandler(event:Event):void {
+			//---------------------------------------
+			// startup
+			//---------------------------------------
+			removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
+			addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler, false, 0, true);
+			stage.addEventListener(KeyboardEvent.KEY_UP, clearAllBalls, false, 0, true);
 
-			stage.addEventListener(Event.RENDER, renderHandler, false, 0, true);
-			stage.invalidate();
+			pool=new ObjectPool(1000);
+			pool.allocate(BallSprite);
+
+			doubleClickEnabled=true;
+
+			//---------------------------------------
+			// invalidation
+			//---------------------------------------
+			if (invalidated) {
+				invalidated=false;
+
+				stage.addEventListener(Event.RENDER, renderHandler, false, 0, true);
+				stage.invalidate();
+			}
 		}
-	}
 
-	private function invalidate():void {
-		if (stage) {
-			stage.addEventListener(Event.RENDER, renderHandler, false, 0, true);
-			stage.invalidate();
-		} else {
-			invalidated=true;
-		}
-	}
-
-	private function renderHandler(event:Event):void {
-		if (stage) {
-			stage.removeEventListener(Event.RENDER, renderHandler);
+		private function invalidate():void {
+			if (stage) {
+				stage.addEventListener(Event.RENDER, renderHandler, false, 0, true);
+				stage.invalidate();
+			} else {
+				invalidated=true;
+			}
 		}
 
-		if (drawNow) {
-			drawNow=false;
-			draw();
+		private function renderHandler(event:Event):void {
+			if (stage) {
+				stage.removeEventListener(Event.RENDER, renderHandler);
+			}
+
+			if (drawNow) {
+				drawNow=false;
+				draw();
+			}
 		}
-	}
 
-	//=========================================================
-	// handler
-	//=========================================================
-	private function doubleClickHandler(event:MouseEvent):void {
-		var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.CREATE_BALL);
-		evt.xpos=event.localX / _width;
-		evt.ypos=event.localY / _height;
+		//=========================================================
+		// handler
+		//=========================================================
+		private function doubleClickHandler(event:MouseEvent):void {
+			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.CREATE_BALL);
+			evt.xpos=event.localX / _width;
+			evt.ypos=event.localY / _height;
 
-		dispatchEvent(evt);
-	}
+			dispatchEvent(evt);
+		}
 
-	//=========================================================
-	// public api
-	//=========================================================
-	public function setBallList(list:Vector.<Ball>):void {
-		this.list=list;
-		drawNow=true;
-		invalidate();
-	}
+		//=========================================================
+		// public api
+		//=========================================================
+		public function setBallList(list:Vector.<Ball>):void {
+			this.list=list;
+			drawNow=true;
+			invalidate();
+		}
 
-	public function deconstruct():void {
-		removeBalls();
-		list=null;
-		pool.free();
-		pool=null;
-	}
+		public function deconstruct():void {
+			removeBalls();
+			list=null;
+			pool.free();
+			pool=null;
+		}
 
-	//=========================================================
-	// override 
-	//=========================================================
-	override public function get height():Number {
-		return _height;
-	}
+		//=========================================================
+		// override 
+		//=========================================================
+		override public function get height():Number {
+			return _height;
+		}
 
-	override public function set height(value:Number):void {
-		_height=value;
-		drawNow=true;
-		invalidate();
-	}
+		override public function set height(value:Number):void {
+			_height=value;
+			drawNow=true;
+			invalidate();
+		}
 
-	override public function get width():Number {
-		return _width;
-	}
+		override public function get width():Number {
+			return _width;
+		}
 
-	override public function set width(value:Number):void {
-		_width=value;
-		drawNow=true;
-		invalidate();
-	}
+		override public function set width(value:Number):void {
+			_width=value;
+			drawNow=true;
+			invalidate();
+		}
 
-	//=========================================================
-	// draw
-	//=========================================================
-	private function draw():void {
-		graphics.clear();
+		//=========================================================
+		// draw
+		//=========================================================
+		private function draw():void {
+			graphics.clear();
 
-		graphics.beginFill(0xffffff, 0.4);
-		graphics.drawRect(0, 0, _width, _height);
-		graphics.endFill();
+			graphics.beginFill(0xffffff, 0.4);
+			graphics.drawRect(0, 0, _width, _height);
+			graphics.endFill();
 
-		var t:int=getTimer();
-		removeBalls();
-		t=getTimer();
-		addBalls();
-	}
+			removeBalls();
 
-	private function addBalls():void {
-		if (list !== null && list.length > 0) {
+			graphics.beginFill(0, 0);
+			addBalls();
+			graphics.endFill();
+		}
 
-			store=new Vector.<BallSprite>;
+		private function addBalls():void {
+			if (list !== null && list.length > 0) {
 
-			var sp:BallSprite;
+				store=new Vector.<BallSprite>;
 
-			var pid:int;
+				var lineThickness:int=1;
+				var lineAlpha:Number=0.1;
 
-			var f:int=-1;
-			var fmax:int=list.length;
-			while (++f < fmax) {
-				trace("ssen.mvc.samples.flash.view.BallCanvas.addBalls(", list[f], ")");
-				pid=pool.next();
-				sp=pool.get(pid) as BallSprite;
-				sp.poolid=pid;
-				sp.ball=list[f];
-				sp.canvas=this;
-				sp.upCallback=up;
-				sp.downCallback=down;
-				sp.removeCallback=remove;
-				sp.watch();
-				addChild(sp);
-				store.push(sp);
+				var sp:BallSprite;
+
+				var pid:int;
+
+				var f:int=-1;
+				var fmax:int=list.length;
+
+				while (++f < fmax) {
+					pid=pool.next();
+					sp=pool.get(pid) as BallSprite;
+					sp.poolid=pid;
+					sp.ball=list[f];
+					sp.canvas=this;
+					sp.upCallback=up;
+					sp.downCallback=down;
+					sp.removeCallback=remove;
+					sp.watch();
+					addChild(sp);
+
+					if (f == 0) {
+						graphics.moveTo(sp.x, sp.y);
+					} else {
+						graphics.lineStyle(lineThickness / 3, 0, lineAlpha, true);
+						graphics.lineTo(sp.x, sp.y);
+
+						lineThickness++;
+						lineAlpha+=0.1;
+					}
+
+					store.push(sp);
+				}
+			}
+		}
+
+		private function removeBalls():void {
+			if (store) {
+				var f:int=store.length;
+				var sp:BallSprite;
+				while (--f >= 0) {
+					sp=store[f];
+					sp.unwatch();
+					removeChild(sp);
+					pool.put(sp.poolid);
+				}
+
+				store=null;
+			}
+		}
+
+		private function up(ball:Ball):void {
+			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.UP_BALL);
+			evt.ball=ball;
+			dispatchEvent(evt);
+		}
+
+		private function down(ball:Ball):void {
+			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.DOWN_BALL);
+			evt.ball=ball;
+			dispatchEvent(evt);
+		}
+
+		private function remove(ball:Ball):void {
+			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.REMOVE_BALL);
+			evt.ball=ball;
+			dispatchEvent(evt);
+		}
+
+		private function clearAllBalls(event:KeyboardEvent):void {
+			if (event.keyCode === Keyboard.ESCAPE) {
+				dispatchEvent(new BallCanvasEvent(BallCanvasEvent.REMOVE_ALL));
 			}
 		}
 	}
-
-	private function removeBalls():void {
-		if (store) {
-			var f:int=store.length;
-			var sp:BallSprite;
-			while (--f >= 0) {
-				sp=store[f];
-				sp.unwatch();
-				removeChild(sp);
-				pool.put(sp.poolid);
-			}
-
-			store=null;
-		}
-	}
-
-	private function up(ball:Ball):void {
-		var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.UP_BALL);
-		evt.ball=ball;
-		dispatchEvent(evt);
-	}
-
-	private function down(ball:Ball):void {
-		var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.DOWN_BALL);
-		evt.ball=ball;
-		dispatchEvent(evt);
-	}
-
-	private function remove(ball:Ball):void {
-		var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.REMOVE_BALL);
-		evt.ball=ball;
-		dispatchEvent(evt);
-	}
-}
 }
 import flash.display.Sprite;
 import flash.events.ContextMenuEvent;
+import flash.geom.Rectangle;
+import flash.text.engine.TextLine;
 import flash.ui.ContextMenu;
 import flash.ui.ContextMenuItem;
+
+import flashx.textLayout.compose.TextLineRecycler;
+import flashx.textLayout.factory.StringTextLineFactory;
+import flashx.textLayout.formats.TextAlign;
+import flashx.textLayout.formats.TextLayoutFormat;
+import flashx.textLayout.formats.VerticalAlign;
 
 import ssen.common.MathUtils;
 import ssen.mvc.samples.flash.model.Ball;
@@ -219,6 +249,7 @@ class BallSprite extends Sprite {
 	private var up:ContextMenuItem;
 	private var down:ContextMenuItem;
 	private var remove:ContextMenuItem;
+	private var tl:TextLine;
 
 	public function unwatch():void {
 		graphics.clear();
@@ -236,6 +267,10 @@ class BallSprite extends Sprite {
 		upCallback=null;
 		downCallback=null;
 		removeCallback=null;
+
+		removeChild(tl);
+		TextLineRecycler.addLineForReuse(tl);
+		tl=null;
 	}
 
 	public function watch():void {
@@ -259,6 +294,23 @@ class BallSprite extends Sprite {
 		ctx.customItems=[up, down, remove];
 
 		contextMenu=ctx;
+
+		mouseChildren=false;
+
+		var cf:TextLayoutFormat=new TextLayoutFormat;
+		cf.textAlign=TextAlign.CENTER;
+		cf.verticalAlign=VerticalAlign.MIDDLE;
+		cf.color=0xffffff;
+		var fac:StringTextLineFactory=new StringTextLineFactory;
+		fac.text=ball.id.toString();
+		fac.textFlowFormat=cf;
+		fac.compositionBounds=new Rectangle(-radius, -radius, radius * 2, radius * 2);
+		fac.createTextLines(textCreated);
+	}
+
+	private function textCreated(line:TextLine):void {
+		tl=line;
+		addChild(tl);
 	}
 
 	private function removeSelect(event:ContextMenuEvent):void {

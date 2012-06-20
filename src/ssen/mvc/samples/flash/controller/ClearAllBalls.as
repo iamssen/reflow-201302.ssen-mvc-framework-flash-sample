@@ -6,7 +6,7 @@ package ssen.mvc.samples.flash.controller {
 	import ssen.mvc.samples.flash.events.BallEvent;
 	import ssen.mvc.samples.flash.model.BallModel;
 
-	public class ClearBallList implements ICommand {
+	public class ClearAllBalls implements ICommand {
 		[Inject]
 		public var model:BallModel;
 

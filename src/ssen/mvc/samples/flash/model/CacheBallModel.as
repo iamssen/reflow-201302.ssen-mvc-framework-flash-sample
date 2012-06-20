@@ -1,118 +1,122 @@
 package ssen.mvc.samples.flash.model {
-import flash.net.SharedObject;
+	import flash.net.SharedObject;
 
-import ssen.mvc.base.Actor;
+	import ssen.mvc.base.Actor;
 
-public class CacheBallModel extends Actor implements BallModel {
-	private const DELAY:int=0;
-	private var table:BallTable;
+	public class CacheBallModel extends Actor implements BallModel {
+		private const DELAY:int=0;
+		private var table:BallTable;
 
-	public function CacheBallModel() {
-		table=new BallTable;
+		public function CacheBallModel() {
+			table=new BallTable;
 
-		var so:SharedObject=SharedObject.getLocal("ballData");
-		if (so.data["backup"]) {
-			table.restoreBackup(so.data["backup"]);
-		}
-	}
-
-	override protected function destruct():void {
-		super.destruct();
-
-		table=null;
-	}
-
-	private function saveBackup():void {
-		var so:SharedObject=SharedObject.getLocal("ballData");
-		so.data["backup"]=table.getBackup();
-	}
-
-	public function addBall(x:Number, y:Number, result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		var ball:Ball=table.addBall(x, y);
-
-		if (result !== null) {
-			result(ball);
-			saveBackup();
-		}
-		// }, DELAY);
-	}
-
-	public function removeBall(id:int, result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		if (table.removeBall(id)) {
-			if (result !== null) {
-				result(id);
-				saveBackup();
-			}
-		} else {
-			if (fault !== null) {
-				fault(new Error("remove failed"));
+			var so:SharedObject=SharedObject.getLocal("ballData");
+			if (so.data["backup"]) {
+				table.restoreBackup(so.data["backup"]);
 			}
 		}
-		// }, DELAY);
-	}
 
-	public function upBall(id:int, result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		var ball:Ball=table.getBall(id);
-		ball.r=ball.r + 1;
-		updateBall(ball, result, fault);
-		// }, DELAY);
-	}
+		override protected function destruct():void {
+			super.destruct();
 
-	public function downBall(id:int, result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		var ball:Ball=table.getBall(id);
-		ball.r=ball.r - 1;
-		updateBall(ball, result, fault);
-		// }, DELAY);
-	}
+			table=null;
+		}
 
-	private function updateBall(ball:Ball, result:Function=null, fault:Function=null):void {
-		if (table.updateBall(ball.id, ball.x, ball.y, ball.r)) {
+		private function saveBackup():void {
+			var so:SharedObject=SharedObject.getLocal("ballData");
+			so.data["backup"]=table.getBackup();
+		}
+
+		public function addBall(x:Number, y:Number, result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			var ball:Ball=table.addBall(x, y);
+
 			if (result !== null) {
 				result(ball);
 				saveBackup();
 			}
-		} else {
-			if (fault !== null) {
-				fault(new Error("update failed"));
+			// }, DELAY);
+		}
+
+		public function removeBall(id:int, result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			if (table.removeBall(id)) {
+				if (result !== null) {
+					result(id);
+					saveBackup();
+				}
+			} else {
+				if (fault !== null) {
+					fault(new Error("remove failed"));
+				}
+			}
+			// }, DELAY);
+		}
+
+		public function upBall(id:int, result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			var ball:Ball=table.getBall(id);
+			ball.r=ball.r + 1;
+			updateBall(ball, result, fault);
+			// }, DELAY);
+		}
+
+		public function downBall(id:int, result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			var ball:Ball=table.getBall(id);
+			ball.r=ball.r - 1;
+			updateBall(ball, result, fault);
+			// }, DELAY);
+		}
+
+		private function updateBall(ball:Ball, result:Function=null, fault:Function=null):void {
+			if (ball.r === 0) {
+				ball.r=1;
+			}
+
+			if (table.updateBall(ball.id, ball.x, ball.y, ball.r)) {
+				if (result !== null) {
+					result(ball);
+					saveBackup();
+				}
+			} else {
+				if (fault !== null) {
+					fault(new Error("update failed"));
+				}
 			}
 		}
-	}
 
-	public function getBallList(result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		var list:Vector.<Ball>=table.getBallList();
+		public function getBallList(result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			var list:Vector.<Ball>=table.getBallList();
 
-		if (list) {
-			if (result !== null) {
-				result(list);
+			if (list) {
+				if (result !== null) {
+					result(list);
+				}
+			} else {
+				if (fault !== null) {
+					fault(new Error("undefined ball list"));
+				}
 			}
-		} else {
-			if (fault !== null) {
-				fault(new Error("undefined ball list"));
-			}
+			// }, DELAY);
 		}
-		// }, DELAY);
-	}
 
-	public function clearBallList(result:Function=null, fault:Function=null):void {
-		// setTimeout(function():void {
-		if (table.removeAllBall()) {
-			if (result !== null) {
-				result();
-				saveBackup();
+		public function clearBallList(result:Function=null, fault:Function=null):void {
+			// setTimeout(function():void {
+			if (table.removeAllBall()) {
+				if (result !== null) {
+					result();
+					saveBackup();
+				}
+			} else {
+				if (fault !== null) {
+					fault(new Error("clear failed"));
+				}
 			}
-		} else {
-			if (fault !== null) {
-				fault(new Error("clear failed"));
-			}
+			// }, DELAY);
 		}
-		// }, DELAY);
 	}
-}
 }
 import ssen.common.DataTable;
 import ssen.mvc.samples.flash.model.Ball;
@@ -161,7 +165,7 @@ class BallTable extends DataTable {
 		var ball:Ball, obj:Object;
 
 		var f:int=-1;
-		var fmax:int=length;
+		var fmax:int=getTablelength();
 		while (++f < fmax) {
 			obj=_read(f);
 

@@ -8,6 +8,7 @@ internal class BallCanvasEvent extends Event {
 	public static const UP_BALL:String="upBall";
 	public static const DOWN_BALL:String="downBall";
 	public static const REMOVE_BALL:String="removeBall";
+	public static const REMOVE_ALL:String="removeAll";
 
 	public var xpos:Number;
 	public var ypos:Number;

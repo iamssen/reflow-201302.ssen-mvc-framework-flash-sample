@@ -17,9 +17,8 @@ package ssen.mvc.samples.flash {
 		}
 
 		private function addedToStageHandler(event:Event):void {
-			trace("ssen.mvc.samples.flash.FlashSample.addedToStageHandler(", event, ")");
 			removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
-			
+
 			initialContext();
 
 			canvas=new BallCanvas;
@@ -29,13 +28,9 @@ package ssen.mvc.samples.flash {
 			addChild(canvas);
 		}
 
-		public function deconstruct():void {
-			removeChild(canvas);
-
-			canvas.graphics.clear();
-			canvas=null;
-		}
-
+		//=========================================================
+		// context control
+		//=========================================================
 		public function get contextInitialized():Boolean {
 			return context !== null;
 		}
@@ -44,6 +39,9 @@ package ssen.mvc.samples.flash {
 			context=new FlashSampleContext(this, parentContext);
 		}
 
+		//=========================================================
+		// override width height
+		//=========================================================
 		override public function get height():Number {
 			return _height;
 		}
