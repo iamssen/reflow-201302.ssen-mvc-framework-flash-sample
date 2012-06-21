@@ -1,12 +1,12 @@
 package ssen.mvc.samples.flash.view {
 	import de.polygonal.ds.pooling.ObjectPool;
-	
+
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
 	import flash.ui.Keyboard;
-	
+
 	import ssen.mvc.samples.flash.model.Ball;
 
 	public class BallCanvas extends Sprite {
@@ -14,13 +14,32 @@ package ssen.mvc.samples.flash.view {
 		private var _width:int=10;
 		private var list:Vector.<Ball>;
 		private var invalidated:Boolean;
-		private var drawNow:Boolean;
+		private var changed:Boolean;
 		private var store:Vector.<BallSprite>;
 		private var pool:ObjectPool;
 
+		//=========================================================
+		// 기능적으로 복잡해 보이지만, 인터페이스로 보면 단순합니다
+		// MVC 예제로는 어울리지 않는 복잡한 예제가 되어버렸네요
+		// 
+		// 외부로 알리는 이벤트들
+		//  - BallCanvasEvent.CREATE_BALL
+		//  - BallCanvasEvent.UP_BALL
+		//  - BallCanvasEvent.DOWN_BALL
+		//  - BallCanvasEvent.REMOVE_BALL
+		//  - BallCanvasEvent.REMOVE_ALL
+		// 
+		// Mediator 에서 사용할 수 있는 기능들
+		//  - setBallList()
+		//  - deconstruct()
+		//
+		// 단순히 인터페이스로 보자면 위의 약속이 있습니다
+		// 전체 로직 상 사용 가능한 View 를 만드는데는 그 구현이 어떻든간에
+		// 위의 인터페이스를 지켜서 만들어지기만 하면 됩니다 (물론 폐쇄성은 필요)
+		//=========================================================
 		public function BallCanvas() {
 			addEventListener(Event.ADDED_TO_STAGE, addedToStageHandler, false, 0, true);
-			drawNow=true;
+			changed=true;
 			invalidate();
 		}
 
@@ -28,13 +47,17 @@ package ssen.mvc.samples.flash.view {
 		// invalidation
 		//=========================================================
 		private function addedToStageHandler(event:Event):void {
+			removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
+
 			//---------------------------------------
 			// startup
 			//---------------------------------------
-			removeEventListener(Event.ADDED_TO_STAGE, addedToStageHandler);
 			addEventListener(MouseEvent.DOUBLE_CLICK, doubleClickHandler, false, 0, true);
 			stage.addEventListener(KeyboardEvent.KEY_UP, clearAllBalls, false, 0, true);
 
+			//---------------------------------------
+			// 무거운 Sprite 객체들을 재활용 하기 위해서 Objectpool 을 사용합니다
+			//---------------------------------------
 			pool=new ObjectPool(1000);
 			pool.allocate(BallSprite);
 
@@ -51,6 +74,9 @@ package ssen.mvc.samples.flash.view {
 			}
 		}
 
+		//=========================================================
+		// display invalidation
+		//=========================================================
 		private function invalidate():void {
 			if (stage) {
 				stage.addEventListener(Event.RENDER, renderHandler, false, 0, true);
@@ -65,29 +91,18 @@ package ssen.mvc.samples.flash.view {
 				stage.removeEventListener(Event.RENDER, renderHandler);
 			}
 
-			if (drawNow) {
-				drawNow=false;
+			if (changed) {
+				changed=false;
 				draw();
 			}
 		}
-
-		//=========================================================
-		// handler
-		//=========================================================
-		private function doubleClickHandler(event:MouseEvent):void {
-			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.CREATE_BALL);
-			evt.xpos=event.localX / _width;
-			evt.ypos=event.localY / _height;
-
-			dispatchEvent(evt);
-		}
-
+		
 		//=========================================================
 		// public api
 		//=========================================================
 		public function setBallList(list:Vector.<Ball>):void {
 			this.list=list;
-			drawNow=true;
+			changed=true;
 			invalidate();
 		}
 
@@ -107,7 +122,7 @@ package ssen.mvc.samples.flash.view {
 
 		override public function set height(value:Number):void {
 			_height=value;
-			drawNow=true;
+			changed=true;
 			invalidate();
 		}
 
@@ -117,7 +132,7 @@ package ssen.mvc.samples.flash.view {
 
 		override public function set width(value:Number):void {
 			_width=value;
-			drawNow=true;
+			changed=true;
 			invalidate();
 		}
 
@@ -127,7 +142,7 @@ package ssen.mvc.samples.flash.view {
 		private function draw():void {
 			graphics.clear();
 
-			graphics.beginFill(0xffffff, 0.4);
+			graphics.beginFill(0xffffff);
 			graphics.drawRect(0, 0, _width, _height);
 			graphics.endFill();
 
@@ -154,17 +169,23 @@ package ssen.mvc.samples.flash.view {
 				var fmax:int=list.length;
 
 				while (++f < fmax) {
+					// pooling
 					pid=pool.next();
 					sp=pool.get(pid) as BallSprite;
 					sp.poolid=pid;
+					
+					// set parameter
 					sp.ball=list[f];
 					sp.canvas=this;
 					sp.upCallback=up;
 					sp.downCallback=down;
 					sp.removeCallback=remove;
+					
+					// activate
 					sp.watch();
 					addChild(sp);
 
+					// line drawing
 					if (f == 0) {
 						graphics.moveTo(sp.x, sp.y);
 					} else {
@@ -175,6 +196,7 @@ package ssen.mvc.samples.flash.view {
 						lineAlpha+=0.1;
 					}
 
+					// store ( for remove balls )
 					store.push(sp);
 				}
 			}
@@ -186,8 +208,12 @@ package ssen.mvc.samples.flash.view {
 				var sp:BallSprite;
 				while (--f >= 0) {
 					sp=store[f];
+					
+					// deactivate
 					sp.unwatch();
 					removeChild(sp);
+					
+					// pooling
 					pool.put(sp.poolid);
 				}
 
@@ -195,6 +221,9 @@ package ssen.mvc.samples.flash.view {
 			}
 		}
 
+		//=========================================================
+		// catch user interaction and send to mediator
+		//=========================================================
 		private function up(ball:Ball):void {
 			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.UP_BALL);
 			evt.ball=ball;
@@ -217,6 +246,14 @@ package ssen.mvc.samples.flash.view {
 			if (event.keyCode === Keyboard.ESCAPE) {
 				dispatchEvent(new BallCanvasEvent(BallCanvasEvent.REMOVE_ALL));
 			}
+		}
+		
+		private function doubleClickHandler(event:MouseEvent):void {
+			var evt:BallCanvasEvent=new BallCanvasEvent(BallCanvasEvent.CREATE_BALL);
+			evt.xpos=event.localX / _width;
+			evt.ypos=event.localY / _height;
+			
+			dispatchEvent(evt);
 		}
 	}
 }

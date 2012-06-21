@@ -3,43 +3,62 @@ package ssen.mvc.samples.flash.model {
 
 	import ssen.mvc.base.Actor;
 
+	//=========================================================
+	// data 의 상태를 Shared Object 에 유지시키는 구현 Model 입니다
+	//=========================================================
 	public class CacheBallModel extends Actor implements BallModel {
-		private const DELAY:int=0;
 		private var table:BallTable;
+		private var dataid:int=0;
 
-		public function CacheBallModel() {
+		//=========================================================
+		// Cache point 를 하나로 고착시키면 Modular 에서 에러가 발생됩니다
+		// 그렇기에 Cache point 가 될 dataid 를 받아들여서 작동합니다
+		//=========================================================
+		public function CacheBallModel(dataid:int) {
+			this.dataid=dataid;
+
 			table=new BallTable;
 
-			var so:SharedObject=SharedObject.getLocal("ballData");
-			if (so.data["backup"]) {
-				table.restoreBackup(so.data["backup"]);
-			}
+			restoreBackup();
 		}
 
+		//=========================================================
+		// Actor destruct
+		//=========================================================
 		override protected function destruct():void {
 			super.destruct();
 
 			table=null;
 		}
 
-		private function saveBackup():void {
+		//=========================================================
+		// Shared Object 의 Data 백업, 복구 기능 입니다 
+		//=========================================================
+		private function restoreBackup():void {
 			var so:SharedObject=SharedObject.getLocal("ballData");
-			so.data["backup"]=table.getBackup();
+			if (so.data["backup" + dataid]) {
+				table.restoreBackup(so.data["backup" + dataid]);
+			}
 		}
 
+		private function saveBackup():void {
+			var so:SharedObject=SharedObject.getLocal("ballData");
+			so.data["backup" + dataid]=table.getBackup();
+		}
+
+		//=========================================================
+		// implements Model API
+		//=========================================================
 		public function addBall(x:Number, y:Number, result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			var ball:Ball=table.addBall(x, y);
 
 			if (result !== null) {
 				result(ball);
 				saveBackup();
 			}
-			// }, DELAY);
 		}
 
 		public function removeBall(id:int, result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			if (table.removeBall(id)) {
 				if (result !== null) {
 					result(id);
@@ -50,23 +69,18 @@ package ssen.mvc.samples.flash.model {
 					fault(new Error("remove failed"));
 				}
 			}
-			// }, DELAY);
 		}
 
 		public function upBall(id:int, result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			var ball:Ball=table.getBall(id);
 			ball.r=ball.r + 1;
 			updateBall(ball, result, fault);
-			// }, DELAY);
 		}
 
 		public function downBall(id:int, result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			var ball:Ball=table.getBall(id);
 			ball.r=ball.r - 1;
 			updateBall(ball, result, fault);
-			// }, DELAY);
 		}
 
 		private function updateBall(ball:Ball, result:Function=null, fault:Function=null):void {
@@ -87,7 +101,6 @@ package ssen.mvc.samples.flash.model {
 		}
 
 		public function getBallList(result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			var list:Vector.<Ball>=table.getBallList();
 
 			if (list) {
@@ -99,11 +112,9 @@ package ssen.mvc.samples.flash.model {
 					fault(new Error("undefined ball list"));
 				}
 			}
-			// }, DELAY);
 		}
 
 		public function clearBallList(result:Function=null, fault:Function=null):void {
-			// setTimeout(function():void {
 			if (table.removeAllBall()) {
 				if (result !== null) {
 					result();
@@ -114,7 +125,6 @@ package ssen.mvc.samples.flash.model {
 					fault(new Error("clear failed"));
 				}
 			}
-			// }, DELAY);
 		}
 	}
 }
