@@ -1,5 +1,5 @@
 package ssen.mvc.samples.flash.view {
-	import ssen.mvc.core.IContextDispatcher;
+	import ssen.mvc.core.IEventBus;
 	import ssen.mvc.core.IMediator;
 	import ssen.mvc.samples.flash.events.BallEvent;
 	import ssen.mvc.samples.flash.model.Ball;
@@ -14,7 +14,7 @@ package ssen.mvc.samples.flash.view {
 	public class BallCanvasMediator implements IMediator {
 
 		[Inject]
-		public var dispatcher:IContextDispatcher;
+		public var eventBus:IEventBus;
 
 		[Inject]
 		public var model:BallModel;
@@ -27,7 +27,7 @@ package ssen.mvc.samples.flash.view {
 
 		public function onRegister():void {
 			// 외부 로직에서 들어오는 요청을 감시합니다 
-			dispatcher.addEventListener(BallEvent.RENDER_BALL_LIST, renderBallList);
+			eventBus.addEventListener(BallEvent.RENDER_BALL_LIST, renderBallList);
 
 			// View 에서 발생되는 User 의 요청을 감시합니다
 			view.addEventListener(BallCanvasEvent.CREATE_BALL, createBall);
@@ -40,7 +40,7 @@ package ssen.mvc.samples.flash.view {
 		}
 
 		public function onRemove():void {
-			dispatcher.removeEventListener(BallEvent.RENDER_BALL_LIST, renderBallList);
+			eventBus.removeEventListener(BallEvent.RENDER_BALL_LIST, renderBallList);
 
 			view.removeEventListener(BallCanvasEvent.CREATE_BALL, createBall);
 			view.removeEventListener(BallCanvasEvent.UP_BALL, upBall);
@@ -59,25 +59,25 @@ package ssen.mvc.samples.flash.view {
 		//=========================================================
 		private function removeAll(event:BallCanvasEvent):void {
 			var evt:BallEvent=new BallEvent(BallEvent.CLEAR_ALL);
-			dispatcher.dispatch(evt);
+			eventBus.dispatchEvent(evt);
 		}
 
 		private function removeBall(event:BallCanvasEvent):void {
 			var evt:BallEvent=new BallEvent(BallEvent.REMOVE_BALL);
 			evt.ballId=event.ball.id;
-			dispatcher.dispatch(evt);
+			eventBus.dispatchEvent(evt);
 		}
 
 		private function downBall(event:BallCanvasEvent):void {
 			var evt:BallEvent=new BallEvent(BallEvent.DOWN_BALL);
 			evt.ballId=event.ball.id;
-			dispatcher.dispatch(evt);
+			eventBus.dispatchEvent(evt);
 		}
 
 		private function upBall(event:BallCanvasEvent):void {
 			var evt:BallEvent=new BallEvent(BallEvent.UP_BALL);
 			evt.ballId=event.ball.id;
-			dispatcher.dispatch(evt);
+			eventBus.dispatchEvent(evt);
 		}
 
 		private function createBall(event:BallCanvasEvent):void {
@@ -85,7 +85,7 @@ package ssen.mvc.samples.flash.view {
 			evt.xpos=event.xpos;
 			evt.ypos=event.ypos;
 
-			dispatcher.dispatch(evt);
+			eventBus.dispatchEvent(evt);
 		}
 
 		//=========================================================

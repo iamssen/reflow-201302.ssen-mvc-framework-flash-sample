@@ -1,7 +1,7 @@
 package ssen.mvc.samples.flash {
 	import ssen.mvc.core.IContext;
 	import ssen.mvc.core.IContextView;
-	import ssen.mvc.ondisplay.DisplayContext;
+	import ssen.mvc.ondisplay.Context;
 	import ssen.mvc.samples.flash.controller.AddBall;
 	import ssen.mvc.samples.flash.controller.ClearAllBalls;
 	import ssen.mvc.samples.flash.controller.RemoveBall;
@@ -12,7 +12,7 @@ package ssen.mvc.samples.flash {
 	import ssen.mvc.samples.flash.view.BallCanvas;
 	import ssen.mvc.samples.flash.view.BallCanvasMediator;
 
-	public class FlashSampleContext extends DisplayContext {
+	public class FlashSampleContext extends Context {
 		private var dataid:int;
 
 		public function FlashSampleContext(dataid:int, contextView:IContextView, parentContext:IContext=null) {
